@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="">
+<meta name="author" content="">
+<title>Freelance</title>
+<?php include_once("includes/common-links.php");?>
+</head>
+<style>
+.open-bt {
+  background-color: #449d44;
+  color: #fff !important;
+}
+</style>
+<body>
+<div class="page">
+  <div id="wrapper">
+  <!------------------>
+  <div id="content">
+<?php 
+include_once("includes/header-inner.php");
+/********** select tbl_user**********/
+include('connection.php');
+/******** end here ********************/
+$user_id = $_GET['user_id'];
+$jobpost_id = $_GET['jobpost_id'];
+
+$Sql_viewbit = "Update tbl_job_post_bid SET intBidViewStatus = '1' where  intProjectId='".$_GET['jobpost_id']."' AND intUserId='".$_GET['user_id']."' AND intBidAcceptStatus='0'";
+$Update_view_bid_status = mysql_query($Sql_viewbit);
+
+$Sql_post_job1 = "select tbl_user.* from tbl_user where tbl_user.intUserID='".$_GET['user_id']."'";
+$Result_post_job1 = mysql_query($Sql_post_job1);
+//$num_row1 = mysql_num_rows($Result_post_job1);
+
+$Sql_tokendeduct = "select tbl_job_post_bid.* from tbl_job_post_bid where tbl_job_post_bid.intUserId='".$_GET['user_id']."'";
+$Result_token_less = mysql_query($Sql_tokendeduct);
+$num_row1 = mysql_num_rows($Result_token_less);
+
+if($num_row1 > 0)
+{
+	$Rows_post_job1 = mysql_fetch_array($Result_post_job1);
+	$deduct_percentage = '0.5';
+	
+	$Rows_Deduct_less = mysql_fetch_array($Result_token_less);
+	
+	if(empty($Rows_Deduct_less['token_deduct']))
+	{	
+		$deduction_amount= $Rows_post_job1['vchToken'] - $deduct_percentage;
+		$rest_token_amount=$Rows_post_job1['tokenAmount'] - $deduct_percentage;
+		
+		$Sql_updateTokens = "Update tbl_user SET vchToken=$deduction_amount,tokenAmount=$rest_token_amount where tbl_user.intUserID='".$_GET['user_id']."'";
+		$Update_User_Token = mysql_query($Sql_updateTokens);
+		
+		$Sql_Bid_Deducted_Tokens = "Update tbl_job_post_bid SET token_deduct=$deduct_percentage where tbl_job_post_bid.intUserId='".$_GET['user_id']."'";
+		$Update_Bid_Token = mysql_query($Sql_Bid_Deducted_Tokens);
+	}		
+}
+$Sql_post_job = "select tbl_user.*,tbl_job_post.*,tbl_job_post_bid.* from tbl_job_post_bid Left join tbl_job_post on tbl_job_post.intJobPostId = tbl_job_post_bid.intProjectId
+Left join tbl_user on tbl_user.intUserID = tbl_job_post_bid.intUserId where intProjectId='".$_GET['jobpost_id']."' AND tbl_job_post_bid.intUserId='".$_GET['user_id']."'";
+
+$Result_post_job = mysql_query($Sql_post_job);
+$num_row = mysql_num_rows($Result_post_job);
+
+if(!empty($_GET['jobpost_id']) and base64_decode(@$_GET['bid'])=="accept")
+{
+	$sqlQuery = "update tbl_job_post_bid set intBidAcceptStatus='2' where intProjectId='".$jobpost_id."'";
+	mysql_query($sqlQuery);
+	
+	$sqlQuery = "update tbl_job_post_bid set intBidAcceptStatus='1' where intProjectId='".$jobpost_id."' and intUserID='".$_GET['user_id']."'";
+	mysql_query($sqlQuery);
+	
+	$sqlQuery = "select intBidAcceptStatus from tbl_job_post_bid where intUserID='".$_GET['user_id']."'";
+	$BidAcceptStatus = mysql_query($sqlQuery);
+	
+	$Rows_BidStat = mysql_fetch_array($BidAcceptStatus);
+	
+	$sqlQuery = "select tbl_user.* from tbl_user where tbl_user.intUserID='".$_GET['user_id']."'";
+	$BidTokenless = mysql_query($sqlQuery);
+	
+	if($Rows_BidStat['intBidAcceptStatus']==1)
+	{
+		
+		$Rows_Final_BidToken = mysql_fetch_array($BidTokenless);
+		$rest_tokenless = '4.5';
+		
+		$rest_vchless=$Rows_Final_BidToken['vchToken']-$rest_tokenless;
+		$rest_Tokenamtless=$Rows_Final_BidToken['tokenAmount']-$rest_tokenless;
+
+		$Sql_upamt = "Update tbl_user SET vchToken=$rest_vchless,tokenAmount=$rest_Tokenamtless where tbl_user.intUserID='".$_GET['user_id']."'";
+		$Update_User_Token = mysql_query($Sql_upamt);
+		
+		
+		//Project_UserMail($_GET['jobpost_id']); 
+		
+		// call the Project User mailer
+		/******** fetch data bid project user id information ****************/
+		$Sql_notification_project ="select tbl_job_post.*,tbl_job_post_bid.* from tbl_job_post_bid 
+		left join tbl_job_post on tbl_job_post.intJobPostId=tbl_job_post_bid.intProjectId
+		where intProjectId='".$proj_jobid."' AND intBidAcceptStatus='1'";
+	
+		$Update_notification_project = mysql_query($Sql_notification_project);
+		$Result_Notification_project = mysql_fetch_array($Update_notification_project);
+		
+		
+		
+		/*********** end here **********************/
+	$Proj_usrID = $Result_Notification_project['intJobPostUserId'];
+	$Sql_getuser_emailid ="select * from tbl_user where intUserID='".$Proj_usrID."'";
+	$Update_notification_userid = mysql_query($Update_notification_userid);
+	$Result_Notification_userid = mysql_fetch_array($Update_notification_userid);
+	
+	$User_emailid= $Result_Notification_userid['vchEmail'];
+	$User_FirstName= $Result_Notification_userid['vchFirst_Name'];
+	
+	$Proj_Title = $Result_Notification_project['vchJobPostTitle'];
+	$Proj_Descrip = $Result_Notification_project['vchJobPostDescription'];
+	$Proj_JobWorkType = $Result_Notification_project['vchJobWorkType'];
+	$Proj_Jobpost_Budget = $Result_Notification_project['vchJobPostBudget'];
+	$Proj_PostPrice = $Result_Notification_project['vchJobPostPrice'];
+	$Proj_ZipCode = $Result_Notification_project['vchJobPostZipCode'];
+	
+	
+	$emailto = $User_emailid;
+	
+    $to = $emailto;
+    $subject = "Freelancer Job Accepted";
+    $message = '<html>
+				<head>
+				<title> Notification Project Accepted</title>
+				</head>
+				<body>
+				<p>Hello $User_FirstName </p>
+				<p>$Proj_Title</p>
+				<p>$Proj_Descrip</p>
+				<p>$Proj_JobWorkType</p>
+				<p>Budget Price: $Proj_Jobpost_Budget</p>
+				<p>Bid Price: $Proj_Jobpost_Budget</p>
+				<p>Zip Code: $Proj_Jobpost_Budget</p>
+				</body>
+				</html>';
+	$headers = "MIME-Version: 1.0" . "\r\n";
+	$headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
+	$headers .= 'From: rohit@rrtechnosolutions.in' . "\r\n";
+	$sendmailprojecr =  mail($to, $subject, $message, $headers);
+		
+		///Hires_UserMail($_GET['jobpost_id']); 
+		// call the User mailer
+		/******** fetch data bid user information ****************/
+		$Sql_notification ="select * from tbl_job_post_bid where intProjectId='".$proj_jobid."' AND intBidAcceptStatus='1'";
+		$Update_notification = mysql_query($Sql_notification);
+		$Result_Notification = mysql_fetch_array($Update_notification);
+	
+		$proj_jobid = $Result_Notification['intProjectId'];
+		$proj_Userid = $Result_Notification['intUserId'];
+		
+		$Sql_notifyuser ="select * from tbl_user where intUserID ='".$proj_Userid."'";
+		$Update_notifyuser = mysql_query($Sql_notifyuser);
+		$Result_notifyuser = mysql_fetch_array($Update_notifyuser);
+		
+		$emailiduser=$Result_notifyuser['vchEmail'];
+	/*********** end here **********************/
+	
+    $userto = $emailiduser;
+    $subjectuser = "You are hired from Freelance";
+    $messageuser = '<html>
+				<head>
+				<title>Project  Notification</title>
+				</head>
+				<body>
+					<p>We will get back to you via emails</p>
+				</body>
+				</html>';
+	$headersuser = "MIME-Version: 1.0" . "\r\n";
+	$headersuser .= "Content-type:text/html;charset=UTF-8" . "\r\n";
+	$headersuser .= 'From: rohit@rrtechnosolutions.in' . "\r\n";
+    $sendmailuser =  mail($userto, $subjectuser, $messageuser, $headersuser);
+	}
+
+	echo '<script>document.location.href="view-projects-bid-viewer.php?user_id='.$_GET['user_id'].'&jobpost_id='.$_GET['jobpost_id'].'&viewbid_status=1"</script>';
+}
+?>
+  <!---------------1----------->
+  <div class="freelanceview">
+    <div class="container">
+      <div class="row">
+        <!---------------->
+        <div class="col-md-12">
+          <?php include('left-side.php');?>
+          <div class="col-lg-9 col-md-9 col-sm-9 col-xs-12">
+            <div class="view_title">
+              <label>Project View Bid</label>
+            </div>
+<?php
+if($num_row > 0)
+{
+$Rows_post_job = mysql_fetch_array($Result_post_job)
+
+?>
+
+	<div class="col-lg-12 dashnoard1">
+    <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 bidderview">
+       	<div class="col-lg-2 col-md-2 col-sm-2 col-xs-2 text-left"> <a href="view-projects-bid.php?project_id=<?php echo $Rows_post_job['intJobPostId'];?>" style="margin-bottom: 10px;"><i class="fa fa-arrow-left"> </i> </a> </div>
+    	<div class="col-lg-8 col-md-2 col-sm-8 col-xs-7 text-center"> 	<label> <?php echo $Rows_post_job['vchJobPostTitle'];?> </label> </div>
+    	<div class="col-lg-2 col-md-2 col-sm-2 col-xs-3 text-right"> 
+        	<?php if($Rows_post_job['intBidAcceptStatus']==0){ ?>
+                <a href="view-projects-bid-viewer.php?user_id=<?php echo $Rows_post_job['intUserId'];?>&jobpost_id=<?php echo $Rows_post_job['intJobPostId'];?>&viewbid_status=1&bid=<?php echo base64_encode('accept') ?>" onClick="return confirm('Are you sure you want to accept bid?')"  style="margin-bottom: 10px;"> <i class="fa fa-phone"> </i> HIRE </a>
+                <?php } else if ($Rows_post_job['intBidAcceptStatus']==1){ ?>
+                <a  style="margin-bottom: 10px;">HIRED</a>
+                <?php } else { ?>
+                <a  style="margin-bottom: 10px;">Already Hired</a>
+            <?php } ?>
+        </div>
+    </div>
+    <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 text-center biddingamt">	
+    	$<?php echo $Rows_post_job['vchBidPrice'];?> Total Price
+    </div>
+    
+    <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">	
+        <div class="col-lg-3 col-md-3 col-sm-3 col-xs-3">	
+        	<img src="images/Business-women1.jpg" alt="Business-women1" style="width:120px;height:120px;padding:0 10px;border-radius:50%;border:solid 1px #333;">
+        </div>
+        
+        <div class="col-lg-9 col-md-9 col-sm-9 col-xs-9">	
+     		<div class="dashnoard3">
+            	<p><b><?php echo $Rows_post_job['vchFirst_Name'].' '.$Rows_post_job['vchLast_Name'] ;?></b></p>
+                <span style="text-align:justify;"> 
+                <?php 
+                    echo $Rows_post_job['vchJobPostDescription'];
+				?>
+                </span>
+                <p> <b>Deliver in : </b><?php echo $Rows_post_job['vchBidDeliverDay'];?> days</p>
+            </div>   
+        </div>
+	
+	<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 text-center biddingamt">	
+		<div class="col-lg-3 col-md-3 col-sm-3 col-xs-3">	
+        	Attachments:
+        </div>
+       
+        <div class="col-lg-9 col-md-9 col-sm-9 col-xs-9 text-left">
+			<?php 
+			$Sql_post_attchement = "select * from tbl_attachments where intJobPostId='".$_GET['jobpost_id']."'";
+			$Result_post_attachement = mysql_query($Sql_post_attchement);
+			?>
+			<?php 
+			while($row_attachment = mysql_fetch_array($Result_post_attachement))
+			{ ?>
+				<a href="<?php echo $row_attachment['vchAttachmentName']; ?>" download style="text-decoration:none;" ><?php echo $row_attachment['vchAttachmentName'];?></a>
+				<br/>
+			<?php } ?> 
+		</div>
+    </div>
+	</div>
+<?php
+}
+?>
+          </div>
+        </div>
+        <!----------------------->
+        <!------------->
+      </div>
+    </div>
+  </div>
+  <!------------------------->
+</div>
+<?php
+function Project_UserMail($proj_jobid) {
+    
+	    
+	
+	 /******** fetch data bid project user id information ****************/
+		$Sql_notification_project ="select tbl_job_post.*,tbl_job_post_bid.* from tbl_job_post_bid 
+		left join tbl_job_post on tbl_job_post.intJobPostId=tbl_job_post_bid.intProjectId
+		where intProjectId='".$proj_jobid."' AND intBidAcceptStatus='1'";
+	
+		$Update_notification_project = mysql_query($Sql_notification_project);
+		$Result_Notification_project = mysql_fetch_array($Update_notification_project);
+		
+		
+		
+		/*********** end here **********************/
+	$Proj_usrID = $Result_Notification_project['intJobPostUserId'];
+	$Sql_getuser_emailid ="select * from tbl_user where intUserID='".$Proj_usrID."'";
+	$Update_notification_userid = mysql_query($Update_notification_userid);
+	$Result_Notification_userid = mysql_fetch_array($Update_notification_userid);
+	
+	$User_emailid= $Result_Notification_userid['vchEmail'];
+	$User_FirstName= $Result_Notification_userid['vchFirst_Name'];
+	
+	$Proj_Title = $Result_Notification_project['vchJobPostTitle'];
+	$Proj_Descrip = $Result_Notification_project['vchJobPostDescription'];
+	$Proj_JobWorkType = $Result_Notification_project['vchJobWorkType'];
+	$Proj_Jobpost_Budget = $Result_Notification_project['vchJobPostBudget'];
+	$Proj_PostPrice = $Result_Notification_project['vchJobPostPrice'];
+	$Proj_ZipCode = $Result_Notification_project['vchJobPostZipCode'];
+	
+	
+	$emailto = $User_emailid;
+	
+    $to = $emailto;
+    $subject = "Freelancer Job Accepted";
+    $message = '<html>
+				<head>
+				<title> Notification Project Accepted</title>
+				</head>
+				<body>
+				<p>Hello $User_FirstName </p>
+				<p>$Proj_Title</p>
+				<p>$Proj_Descrip</p>
+				<p>$Proj_JobWorkType</p>
+				<p>Budget Price: $Proj_Jobpost_Budget</p>
+				<p>Bid Price: $Proj_Jobpost_Budget</p>
+				<p>Zip Code: $Proj_Jobpost_Budget</p>
+				</body>
+				</html>';
+	$headers = "MIME-Version: 1.0" . "\r\n";
+	$headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
+	// More headers
+	//$headers .= 'From: <webmaster@example.com>' . "\r\n";
+    
+	$headers .= 'From: rohit@rrtechnosolutions.in' . "\r\n";
+
+  return $sendmail =  mail($to, $subject, $message, $headers);
+}
+
+function Hires_UserMail($proj_jobid){
+	
+	
+	/******** fetch data bid user information ****************/
+		$Sql_notification ="select * from tbl_job_post_bid where intProjectId='".$proj_jobid."' AND intBidAcceptStatus='1'";
+		$Update_notification = mysql_query($Sql_notification);
+		$Result_Notification = mysql_fetch_array($Update_notification);
+	
+		$proj_jobid = $Result_Notification['intProjectId'];
+		$proj_Userid = $Result_Notification['intUserId'];
+		
+		$Sql_notifyuser ="select * from tbl_user where intUserID ='".$proj_Userid."'";
+		$Update_notifyuser = mysql_query($Sql_notifyuser);
+		$Result_notifyuser = mysql_fetch_array($Update_notifyuser);
+		
+		$emailiduser=$Result_notifyuser['vchEmail'];
+	/*********** end here **********************/
+	
+    $to = $emailiduser;
+    $subject = "You are hired from Freelance";
+    $message = '<html>
+				<head>
+				<title>Project  Notification</title>
+				</head>
+				<body>
+					<p>We will get back to you via emails</p>
+				</body>
+				</html>';
+	$headers = "MIME-Version: 1.0" . "\r\n";
+	$headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
+	// More headers
+	//$headers .= 'From: <webmaster@example.com>' . "\r\n";
+    
+	$headers .= 'From: rohit@rrtechnosolutions.in' . "\r\n";
+
+    return $sendmail =  mail($to, $subject, $message, $headers);
+}
+?>
+<!--------------->
+<?php include_once("includes/footer.php");?>
+
+</div>
+</div>
+</body>
+</html>

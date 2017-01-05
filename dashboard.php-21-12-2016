@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="">
+<meta name="author" content="">
+<title>Freelance</title>
+
+<?php include_once("includes/common-links.php");?>
+<?php 
+
+	/*$y =date('Y',strtotime($user_Info[0]['vchExpiredDate']));
+	$m =date('m',strtotime($user_Info[0]['vchExpiredDate']));
+	$d =date('d',strtotime($user_Info[0]['vchExpiredDate']));
+	$h =date('H',strtotime($user_Info[0]['vchExpiredDate']));
+	$Mins =date('i',strtotime($user_Info[0]['vchExpiredDate']));*/
+?>
+
+</head>
+<body onLoad="countdown(year,month,day,hour,minute); ">
+<div class="page">
+<div id="wrapper">
+  <!------------------>
+  <div id="content">
+<?php 
+//include_once("includes/header2.php");
+include_once("includes/header-inner.php");
+
+?>
+<?php 
+/********** select tbl_user**********/
+include('connection.php');
+
+
+if(isset($_GET['job_id']) and !empty($_GET['job_id']))
+{
+	$sqlQuery = "insert into tbl_job_post_hide set intUserID='".$_SESSION['user_id']."',IntJobPostID='".$_GET['job_id']."' ";
+	$result_hide = mysql_query($sqlQuery);
+	$url ="dashboard.php"; ?>
+	<script>
+	window.location.href="<?php echo $url; ?>";
+	</script>
+
+	
+<?php }
+
+
+$Sql = "select vchZip_Code from tbl_user where  intUserID='".$_SESSION['user_id']."'";
+$Result = mysql_query($Sql);
+//echo $Sql_Get_Zip_code ="SELECT * FROM tbl_job_post_multizipcode WHERE intUserId='".$_SESSION['user_id']."'";
+//$Result_Zip_Code = mysql_query($Sql_Get_Zip_code);
+$Rows = mysql_fetch_array($Result);
+
+if(isset($_REQUEST['submitsrch']) and !empty($_REQUEST['submitsrch']))
+{
+$contr=@$_REQUEST["catSearch"];
+$hourlyBudget=@$_REQUEST["hourlyBudget"];
+$fixedBudget=@$_REQUEST["fixedBudget"];
+$jobTitle=@$_REQUEST["jobTitle"];
+$jobSkills=@$_REQUEST["jobSkills"];
+
+$disp = "select tbl_category.*,tbl_job_post.*  from  tbl_job_post left join tbl_category on tbl_category.intCategoryID = tbl_job_post.vchJobWorkType where vchJobPostZipCode='".$Rows['vchZip_Code']."' AND intJobPostUserId='".$_SESSION['user_id']."' ";
+
+	$pagingVal = 'submitsrch=Go';
+if($contr != '')
+	{
+		$contr = implode("','",$contr);
+		
+		$disp .=" AND  intCategoryID IN('".$contr."') ";
+		
+		foreach($_REQUEST["catSearch"] as $contVal)
+		{
+			$pagingVal.='&catSearch[]='.$contVal;	
+		}
+
+	}
+if($jobTitle != '')
+	{
+		$disp .="	AND vchJobPostTitle like '%".$_REQUEST["jobTitle"]."%' ";
+		
+	}
+	
+if($jobSkills != '')
+	{
+		$disp .="	AND vchJobSkill like '%".$_REQUEST["jobSkills"]."%' ";
+		
+	}
+
+if($hourlyBudget != '')
+	{
+		$disp .="	AND bidpricetype like '%".$_REQUEST["hourlyBudget"]."%' ";
+		
+	}
+	
+if($fixedBudget != '')
+	{
+		$disp .="	AND  bidpricetype like '%".$_REQUEST["fixedBudget"]."%' ";
+		
+	}
+	
+	
+  $Result_post_job=mysql_query($disp) ;
+	
+	
+
+}
+else{
+	 $Sql_post_job = "select tbl_user.*,tbl_job_post_multizipcode.*, tbl_job_post.* from tbl_job_post 
+					left join tbl_job_post_multizipcode  ON tbl_job_post_multizipcode.intUserId= tbl_job_post.intJobPostUserId  
+					left join tbl_user  ON tbl_user.intUserID= tbl_job_post.intJobPostUserId  
+						where  tbl_job_post_multizipcode.intMultizipCode='".$Rows['vchZip_Code']."' 
+						AND tbl_job_post.intJobPostUserId!='".$_SESSION['user_id']."'  GROUP BY tbl_job_post.intJobPostId order by tbl_job_post.intJobPostId  desc";
+
+	$Result_post_job = mysql_query($Sql_post_job);
+
+}
+/*$Sql = "select vchZip_Code from tbl_user where  intUserID='".$_SESSION['user_id']."'";
+$Result = mysql_query($Sql);
+$Rows = mysql_fetch_array($Result);*/
+/******** end here ********************/
+
+
+
+?>
+	<!---------------1----------->
+	<div class="dashboard">
+		<div class="container">
+			<div class="row">
+				<?php include('left-side.php');?>
+				
+				<div class="col-lg-9">
+					<div class="col-lg-12 text-left jobs-posted"> Most Recent Jobs Posted </div>
+  
+						<?php 
+						$num_row = mysql_num_rows($Result_post_job);
+						if($num_row > 0)
+						{
+						while($Rows_post_job = mysql_fetch_array($Result_post_job))
+						{ 
+							$Sql_post_hide = "select * from tbl_job_post_hide where IntJobPostID='".$Rows_post_job['intJobPostId']."' AND intUserID='".$_SESSION['user_id']."'";
+							$Result_postHide = mysql_query($Sql_post_hide);
+							$result_row = mysql_num_rows($Result_postHide);
+							if($result_row >0)
+							{
+								
+							}else{
+								
+							?>
+							<div class="col-lg-12 dashnoard1">
+							<div class=" col-lg-9">
+							<div class="dashnoard2">
+							<label> <?php echo $Rows_post_job['vchJobPostTitle'];?> </label>
+							<span> 
+							<?php 
+								if (strlen($Rows_post_job['vchJobPostDescription']) > 100)
+								{
+								echo substr($Rows_post_job['vchJobPostDescription'], 0, 100);
+								
+								}
+								else
+								{
+								echo $Rows_post_job['vchJobPostDescription'];
+								
+								} ?>
+						</span>
+							<p> <?php echo date('Y-m-d', strtotime($Rows_post_job['VchJobPostDate'])); ?></p>
+							</div>
+
+							</div>
+							<div class="col-lg-3 text-right">
+							<div class=" right-buttons">
+							<a href="view.php?project_id=<?php echo $Rows_post_job['intJobPostId'];?>" id="" class="btn btn-warning">VIEW</a>
+							
+							<a class="btn btn-success" href="dashboard.php?job_id=<?php echo $Rows_post_job['intJobPostId']; ?>" onClick="return confirm('Are you sure you want to hide  it?');"><i class="fa fa-eye" aria-hidden="true"></i> </a>
+
+							
+							</div>
+							</div>
+							</div>
+						<?php
+						}
+						}
+						} else {  ?>
+							<div class="col-lg-12 dashnoard1">
+							<h1>No Job Found</h1>
+							</div>
+							
+						<?php }
+						?>
+				</div>
+
+			</div>
+	</div>
+	</div>
+
+ <div class="modal" id="myModal" role="dialog">
+    <div class="modal-dialog">
+    
+      <!-- Modal content-->
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close"  id="close" data-dismiss="modal">&times;</button>
+          <h4 class="modal-title">Bidding Section</h4>
+        </div>
+        <div class="modal-body">
+          <p id="data-time">You don't efficient token for this job. please purchase more token</p>
+        </div>
+        
+      </div>
+      
+    </div>
+  </div>
+<!--------------->
+
+</div>
+
+<?php include_once("includes/footer.php");?>
+
+</div>
+</div>
+<!------------>
+
+<script type="text/javascript">
+$(document).ready(function(){
+   $( ".bid-bt-hide" ).click(function() 
+	{
+		
+		var bid_bt_hide= $(this).attr('rel');
+		var baseUrl = $("#base_url").val();
+		alert(bid_bt_hide);
+		return false;
+		$.ajax({
+		type: "POST",
+		url: baseUrl+'/check-bid.php',
+		data: {
+			bid_bt :bid_bt
+			
+		},
+		success: function(msg) 
+		{
+			if(msg==1)
+			{
+				$('#myModal').css('display','block');
+			}
+			
+			return false;
+		}
+
+		});
+	});
+	
+	$( "#close" ).click(function() {
+	 $('#myModal').css('display','none');
+	});
+});
+</script>
+<!--------------------->
+<!--------------->
+<script>
+var current='<table border="0" cellpadding="0" cellspacing="0" style="border:none;"><tr><td style="border:none;color:#5D3D00; font-size:12px; font-family:Verdana, Arial, Helvetica, sans-serif;"><b>Sorry, you have missed out on this deal.</b></td></tr><tr><td height="15"></td></tr><tr><td style="border:none;color:#5D3D00; font-size:12px; font-family:Verdana, Arial, Helvetica, sans-serif;"><b>Please revisit the site soon to take advantage of our next Special Offer.</td></tr></table>';
+var year=2016;      
+var month=12;       
+var day=25;         
+var hour=23;        
+var minute=59;      
+var tz=+10; 
+var montharray=new Array("Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec");
+
+function countdown1(yr,m,d,hr,min)
+{
+
+	theyear=yr;themonth=m;theday=d;thehour=hr;theminute=min;
+
+	var today=new Date();
+
+	var todayy=today.getYear();
+
+	if (todayy < 1000) {todayy+=1900;}
+
+	var todaym=today.getMonth();
+
+	var todayd=today.getDate();
+
+	var todayh=today.getHours();
+
+	var todaymin=today.getMinutes();
+
+	var todaysec=today.getSeconds();
+
+	var todaystring1=montharray[todaym]+" "+todayd+", "+todayy+" "+todayh+":"+todaymin+":"+todaysec;
+
+	var todaystring=Date.parse(todaystring1)+(tz*1000*60*60);
+
+	var futurestring1=(montharray[m-1]+" "+d+", "+yr+" "+hr+":"+min);
+
+	var futurestring=Date.parse(futurestring1)-(today.getTimezoneOffset()*(1000*60));
+
+	var dd=futurestring-todaystring;
+
+	var dday=Math.floor(dd/(60*60*1000*24)*1);
+
+	var dhour=Math.floor((dd%(60*60*1000*24))/(60*60*1000)*1);
+
+	var dmin=Math.floor(((dd%(60*60*1000*24))%(60*60*1000))/(60*1000)*1);
+
+	var dsec=Math.floor((((dd%(60*60*1000*24))%(60*60*1000))%(60*1000))/1000*1);
+
+	if(dday<=0&&dhour<=0&&dmin<=0&&dsec<=0){
+		
+		
+		
+		document.getElementById('count2').innerHTML=current;
+
+		document.getElementById('count2').style.display="inline";
+
+		document.getElementById('count2').style.width="390px";
+		
+		document.getElementById('yuhav').style.display="none";
+		
+		document.getElementById('dday').style.display="none";
+
+		document.getElementById('dhour').style.display="none";
+
+		document.getElementById('dmin').style.display="none";
+
+		document.getElementById('dsec').style.display="none";
+		
+		document.getElementById('buydl').style.display="none";
+		
+		document.getElementById('buynw').style.display="none";
+		return;
+
+	}
+
+	else {
+
+		document.getElementById('count2').style.display="none";
+
+		document.getElementById('dday').innerHTML="<b>"+dday+" Day(s)</b>&nbsp;";
+
+		document.getElementById('dhour').innerHTML="<b>"+dhour+ " Hours </b>&nbsp;";
+
+		document.getElementById('dmin').innerHTML="<b>"+dmin+ " Min. </b> ";
+
+		document.getElementById('dsec').innerHTML="<b>&nbsp;"+dsec+ " Sec. </b>";
+
+		setTimeout("countdown(theyear,themonth,theday,thehour,theminute)",1000);
+
+	}
+
+}
+</script>
+</body>
+</html>

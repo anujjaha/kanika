@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="">
+<meta name="author" content="">
+<title>Freelance</title>
+<?php include_once("includes/common-links.php");?>
+</head>
+<body>
+<div class="page">
+<div id="wrapper">
+  <!------------------>
+  <div id="content">
+<?php 
+//include_once("includes/header2.php");
+include_once("includes/header-inner.php");
+
+?>
+<?php 
+/********** select tbl_user**********/
+include('connection.php');
+$Sql = "select vchZip_Code from tbl_user where  intUserID='".$_SESSION['user_id']."'";
+$Result = mysql_query($Sql);
+//echo $Sql_Get_Zip_code ="SELECT * FROM tbl_job_post_multizipcode WHERE intUserId='".$_SESSION['user_id']."'";
+//$Result_Zip_Code = mysql_query($Sql_Get_Zip_code);
+$Rows = mysql_fetch_array($Result);
+
+if(isset($_REQUEST['submitsrch']) and !empty($_REQUEST['submitsrch']))
+{
+$contr=@$_REQUEST["catSearch"];
+$hourlyBudget=@$_REQUEST["hourlyBudget"];
+$fixedBudget=@$_REQUEST["fixedBudget"];
+$jobTitle=@$_REQUEST["jobTitle"];
+$jobSkills=@$_REQUEST["jobSkills"];
+
+$disp = "select tbl_category.*,tbl_job_post.*  from  tbl_job_post left join tbl_category on tbl_category.intCategoryID = tbl_job_post.vchJobWorkType where vchJobPostZipCode='".$Rows['vchZip_Code']."'  AND intJobPostUserId='".$_SESSION['user_id']."' ";
+
+	$pagingVal = 'submitsrch=Go';
+if($contr != '')
+	{
+		$contr = implode("','",$contr);
+		
+		$disp .=" AND  intCategoryID IN('".$contr."') ";
+		
+		foreach($_REQUEST["catSearch"] as $contVal)
+		{
+			$pagingVal.='&catSearch[]='.$contVal;	
+		}
+
+	}
+if($jobTitle != '')
+	{
+		$disp .="	AND vchJobPostTitle like '%".$_REQUEST["jobTitle"]."%' ";
+		
+	}
+	
+if($jobSkills != '')
+	{
+		$disp .="	AND vchJobSkill like '%".$_REQUEST["jobSkills"]."%' ";
+		
+	}
+
+if($hourlyBudget != '')
+	{
+		$disp .="	AND bidpricetype like '%".$_REQUEST["hourlyBudget"]."%' ";
+		
+	}
+	
+if($fixedBudget != '')
+	{
+		$disp .="	AND  bidpricetype like '%".$_REQUEST["fixedBudget"]."%' ";
+		
+	}
+	
+	
+  $Result_post_job=mysql_query($disp) ;
+	
+	
+
+}
+else{
+	 $Sql_post_job = "select tbl_user.*,tbl_job_post_multizipcode.*, tbl_job_post.* from tbl_job_post 
+					left join tbl_job_post_multizipcode  ON tbl_job_post_multizipcode.intUserId= tbl_job_post.intJobPostUserId  
+					left join tbl_user  ON tbl_user.intUserID= tbl_job_post.intJobPostUserId  
+						where  tbl_job_post_multizipcode.intMultizipCode='".$Rows['vchZip_Code']."' 
+						AND tbl_job_post.intJobPostUserId!='".$_SESSION['user_id']."'  GROUP BY tbl_job_post.intJobPostId order by tbl_job_post.intJobPostId  desc";
+	$Result_post_job = mysql_query($Sql_post_job);
+
+}
+/*$Sql = "select vchZip_Code from tbl_user where  intUserID='".$_SESSION['user_id']."'";
+$Result = mysql_query($Sql);
+$Rows = mysql_fetch_array($Result);*/
+/******** end here ********************/
+
+
+
+?>
+	<!---------------1----------->
+	<div class="dashboard">
+		<div class="container">
+			<div class="row">
+				<?php include('left-side.php');?>
+				
+				<div class="col-lg-9">
+					<div class="col-lg-12 text-left jobs-posted"> Most Recent Jobs Posted </div>
+
+						<?php 
+						$num_row = mysql_num_rows($Result_post_job);
+						if($num_row > 0)
+						{
+						while($Rows_post_job = mysql_fetch_array($Result_post_job))
+						{ ?>
+							<div class="col-lg-12 dashnoard1">
+							<div class=" col-lg-9">
+							<div class="dashnoard2">
+							<label> <?php echo $Rows_post_job['vchJobPostTitle'];?> </label>
+							<span> 
+							<?php 
+								if (strlen($Rows_post_job['vchJobPostDescription']) > 100)
+								{
+								echo substr($Rows_post_job['vchJobPostDescription'], 0, 100);
+								
+								}
+								else
+								{
+								echo $Rows_post_job['vchJobPostDescription'];
+								
+								} ?>
+						</span>
+							<p> <?php echo date('Y-m-d', strtotime($Rows_post_job['VchJobPostDate'])); ?></p>
+							</div>
+
+							</div>
+							<div class="col-lg-3 text-right">
+							<div class=" right-buttons">
+							<a href="view.php?project_id=<?php echo $Rows_post_job['intJobPostId'];?>" id="" class="btn btn-warning">VIEW</a>
+							<!--<button type="button"   rel="<?php //echo $Rows_post_job['intJobPostId'];?>" class="btn btn-success bid-bt">BID</button>-->
+							</div>
+							</div>
+							</div>
+						<?php
+						}
+						} else {  ?>
+							<div class="col-lg-12 dashnoard1">
+							<h1>No Job Found</h1>
+							</div>
+							
+						<?php }
+						?>
+				</div>
+
+			</div>
+	</div>
+	</div>
+
+ <div class="modal" id="myModal" role="dialog">
+    <div class="modal-dialog">
+    
+      <!-- Modal content-->
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close"  id="close" data-dismiss="modal">&times;</button>
+          <h4 class="modal-title">Bidding Section</h4>
+        </div>
+        <div class="modal-body">
+          <p id="data-time">You don't efficient token for this job. please purchase more token</p>
+        </div>
+        
+      </div>
+      
+    </div>
+  </div>
+<!--------------->
+
+</div>
+
+<?php include_once("includes/footer.php");?>
+
+</div>
+</div>
+<!------------>
+
+<script type="text/javascript">
+$(document).ready(function(){
+   $( ".bid-bt" ).click(function() 
+	{
+		
+		var bid_bt= $(this).attr('rel');
+		var baseUrl = $("#base_url").val();
+		$.ajax({
+		type: "POST",
+		url: baseUrl+'/check-bid.php',
+		data: {
+			bid_bt :bid_bt
+			
+		},
+		success: function(msg) 
+		{
+			if(msg==1)
+			{
+				$('#myModal').css('display','block');
+			}
+			
+			return false;
+		}
+
+		});
+	});
+	
+	$( "#close" ).click(function() {
+	 $('#myModal').css('display','none');
+	});
+});
+</script>
+<!--------------------->
+<!--------------->
+
+</body>
+</html>

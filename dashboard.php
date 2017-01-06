@@ -1,3 +1,4 @@
+<?php error_reporting(0);?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,39 +10,24 @@
 <title>Freelance</title>
 
 <?php include_once("includes/common-links.php");?>
-<?php 
-
-	/*$y =date('Y',strtotime($user_Info[0]['vchExpiredDate']));
-	$m =date('m',strtotime($user_Info[0]['vchExpiredDate']));
-	$d =date('d',strtotime($user_Info[0]['vchExpiredDate']));
-	$h =date('H',strtotime($user_Info[0]['vchExpiredDate']));
-	$Mins =date('i',strtotime($user_Info[0]['vchExpiredDate']));*/
-?>
-
 </head>
 <body onLoad="countdown(year,month,day,hour,minute); ">
 <div class="page">
 <div id="wrapper">
+<div id="content">
 
-  <!------------------>
-  <div id="content">
 <?php 
-//include_once("includes/header2.php");
-include_once("includes/header-inner.php");
-
-?>
-<?php 
-/********** select tbl_user**********/
-include('connection.php');
-
+	include_once("includes/header-inner.php");
+	include('connection.php');
 
 if(isset($_GET['job_id']) and !empty($_GET['job_id']))
 {
 	$sqlQuery = "insert into tbl_job_post_hide set intUserID='".$_SESSION['user_id']."',IntJobPostID='".$_GET['job_id']."' ";
 	$result_hide = mysql_query($sqlQuery);
-	$url ="dashboard.php"; ?>
+	$url ="dashboard.php";
+	?>
 	<script>
-	window.location.href="<?php echo $url; ?>";
+		window.location.href="<?php echo $url; ?>";
 	</script>
 
 	
@@ -51,59 +37,113 @@ if(isset($_GET['job_id']) and !empty($_GET['job_id']))
 $Sql = "select vchZip_Code,job_notification from tbl_user where  intUserID='".$_SESSION['user_id']."'";
 
 $Result = mysql_query($Sql);
-//echo $Sql_Get_Zip_code ="SELECT * FROM tbl_job_post_multizipcode WHERE intUserId='".$_SESSION['user_id']."'";
-//$Result_Zip_Code = mysql_query($Sql_Get_Zip_code);
-$Rows = mysql_fetch_array($Result);
+$Rows 	= mysql_fetch_array($Result);
 $userNotificationTypes = $Rows['job_notification'];
 
 
 if(isset($_REQUEST['submitsrch']) and !empty($_REQUEST['submitsrch']))
 {
-$contr=@$_REQUEST["catSearch"];
-$hourlyBudget=@$_REQUEST["hourlyBudget"];
-$fixedBudget=@$_REQUEST["fixedBudget"];
-$jobTitle=@$_REQUEST["jobTitle"];
-$jobSkills=@$_REQUEST["jobSkills"];
 
-$disp = "select tbl_category.*,tbl_job_post.*  from  tbl_job_post left join tbl_category on tbl_category.intCategoryID = tbl_job_post.vchJobWorkType where vchJobPostZipCode='".$Rows['vchZip_Code']."' AND vchJobWorkType IN (" .$_SESSION['user_job_notification']. ") AND intJobPostUserId !='".$_SESSION['user_id']."' ";
+	$filterCategories 	= $_REQUEST['categoryFilter'];
+	$childCategory 		= array();
+	$parentCategory 	= array();
+	$parentFilter 		= "";
+	$childFilter  		= "";
+
+	foreach ($filterCategories as $value) 
+	{
+		if(strlen($value) > 15)
+		{
+			$value = explode("-", $value);
+			array_push($childCategory, $value[1]);
+		}
+		else
+		{
+			array_push($parentCategory, $value);
+		}
+	}
+
+	if(count($childCategory))
+	{
+		$childFilter = implode(",", $childCategory);	
+	}
+
+	if(count($parentFilter))
+	{
+		$parentFilter = implode(",", $parentCategory);	
+	}
+
+
+	$contr=@$_REQUEST["catSearch"];
+	$hourlyBudget=@$_REQUEST["hourlyBudget"];
+	$fixedBudget=@$_REQUEST["fixedBudget"];
+	$jobTitle=@$_REQUEST["jobTitle"];
+	$jobSkills=@$_REQUEST["jobSkills"];
+
+
+	if(!empty($childCategory) && !empty($parentCategory))
+	{
+		$disp = "SELECT tbl_category.*,tbl_job_post.*  FROM tbl_job_post 
+				LEFT JOIN tbl_category on tbl_category.intCategoryID = tbl_job_post.vchJobWorkType 
+				WHERE 
+				vchJobPostZipCode='".$Rows['vchZip_Code']."'
+				AND vchJobWorkType IN (" .$userNotificationTypes. ")
+				AND intJobPostUserId !='".$_SESSION['user_id']."' 
+				AND vchJobWorkType IN (" .$parentCategory. ")
+				AND vchJobWorkSubType IN (" .$childCategory. ")
+				";	
+	}
+	else if(!empty($parentCategory))
+	{
+		$disp = "SELECT tbl_category.*,tbl_job_post.*  FROM tbl_job_post 
+				LEFT JOIN tbl_category on tbl_category.intCategoryID = tbl_job_post.vchJobWorkType 
+				WHERE 
+				vchJobPostZipCode='".$Rows['vchZip_Code']."'
+				AND vchJobWorkType IN (" .$userNotificationTypes. ")
+				AND intJobPostUserId !='".$_SESSION['user_id']."' 
+				AND vchJobWorkType IN (" .$parentCategory. ")";	
+	}
+	else if(!empty($childCategory))
+	{
+		$disp = "SELECT tbl_category.*,tbl_job_post.*  FROM tbl_job_post 
+				LEFT JOIN tbl_category on tbl_category.intCategoryID = tbl_job_post.vchJobWorkType 
+				WHERE 
+				vchJobPostZipCode='".$Rows['vchZip_Code']."'
+				AND vchJobWorkType IN (" .$userNotificationTypes. ")
+				AND intJobPostUserId !='".$_SESSION['user_id']."' 
+				AND vchJobWorkSubType IN (" .$childCategory. ")";	
+	}
+	else
+	{
+		$disp = "SELECT tbl_category.*,tbl_job_post.*  FROM tbl_job_post 
+				LEFT JOIN tbl_category on tbl_category.intCategoryID = tbl_job_post.vchJobWorkType 
+				WHERE
+				vchJobPostZipCode='".$Rows['vchZip_Code']."'
+				AND intJobPostUserId !='".$_SESSION['user_id']."'";
+	}
+
 
 	$pagingVal = 'submitsrch=Go';
-if($contr != '')
-	{
-		$contr = implode("','",$contr);
-		
-		$disp .=" AND  intCategoryID IN('".$contr."') ";
-		
-		foreach($_REQUEST["catSearch"] as $contVal)
-		{
-			$pagingVal.='&catSearch[]='.$contVal;	
-		}
 
-	}
-if($jobTitle != '')
+	if($jobTitle != '')
 	{
-		$disp .="	AND vchJobPostTitle like '%".$_REQUEST["jobTitle"]."%' ";
-		
+			$disp .="	AND vchJobPostTitle like '%".$_REQUEST["jobTitle"]."%' ";
 	}
-	
-if($jobSkills != '')
+		
+	if($jobSkills != '')
 	{
 		$disp .="	AND vchJobSkill like '%".$_REQUEST["jobSkills"]."%' ";
-		
 	}
 
-if($hourlyBudget != '')
+	if($hourlyBudget != '')
 	{
 		$disp .="	AND bidpricetype like '%".$_REQUEST["hourlyBudget"]."%' ";
-		
 	}
 	
-if($fixedBudget != '')
+	if($fixedBudget != '')
 	{
 		$disp .="	AND  bidpricetype like '%".$_REQUEST["fixedBudget"]."%' ";
-		
 	}
-
 
 	$Result_post_job=mysql_query($disp) ;
 }
@@ -113,15 +153,8 @@ else
 		AND intUserId!='".$_SESSION['user_id']."' ORDER BY intZipcodeId DESC ";
 		$Result_post_job = mysql_query($Sql_post_job);
 }
-/*$Sql = "select vchZip_Code from tbl_user where  intUserID='".$_SESSION['user_id']."'";
-$Result = mysql_query($Sql);
-$Rows = mysql_fetch_array($Result);*/
-/******** end here ********************/
-
-
-
 ?>
-	<!---------------1----------->
+	
 	<div class="dashboard">
 		<div class="container">
 			<div class="row">

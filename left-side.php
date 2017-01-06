@@ -8,16 +8,26 @@
     <div class="search_category">
 	<form name="categorySearch" method="GET" action="dashboard.php">
 		<?php
-			$Sql_category = "select * from tbl_category";
-			$Result_category = mysql_query($Sql_category);
+			$html = '';
+			$Sql_category 		= "select * from tbl_category";
+			$Result_category 	= mysql_query($Sql_category);
 			while($row_category = mysql_fetch_array($Result_category))
-			{ ?>
-			<div class="design1">
-				<input type="checkbox" name="catSearch[]" value="<?php echo $row_category['intCategoryID']; ?>"> <label><?php echo $row_category['intCategoryName'];?></label>
-			</div>
-		<?php } 
+			{ 
+				$html .= '<option value="' .$row_category['intCategoryID']. '">' .$row_category['intCategoryName']. '</option>';
+
+				$subCategory = "select * from child_categories";
+				$subResult = mysql_query($subCategory);
+				while($subRowResult = mysql_fetch_array($subResult))
+				{
+					$html .= '<option value="childCategories-' .$subRowResult['id']. '"> ---' .$subRowResult['title']. '</option>';					
+				}
+			} 
 		?>
+		<select name="categoryFilter[]" class="form-control" multiple="multiple" style="height: 300px;">
+			<?php echo $html;?>
+		</select>
 		<hr>
+
 		<div class="design1">
 			<input type="checkbox" name="hourlyBudget" value="Hourly"> <label>Hourly </label>
 		</div>

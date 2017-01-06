@@ -89,8 +89,8 @@ if(isset($_REQUEST['submitsrch']) and !empty($_REQUEST['submitsrch']))
 				vchJobPostZipCode='".$Rows['vchZip_Code']."'
 				AND vchJobWorkType IN (" .$userNotificationTypes. ")
 				AND intJobPostUserId !='".$_SESSION['user_id']."' 
-				AND vchJobWorkType IN (" .$parentCategory. ")
-				AND vchJobWorkSubType IN (" .$childCategory. ")
+				AND vchJobWorkType IN (" .$parentFilter. ")
+				AND vchJobWorkSubType IN (" .$childFilter. ")
 				";	
 	}
 	else if(!empty($parentCategory))
@@ -101,7 +101,7 @@ if(isset($_REQUEST['submitsrch']) and !empty($_REQUEST['submitsrch']))
 				vchJobPostZipCode='".$Rows['vchZip_Code']."'
 				AND vchJobWorkType IN (" .$userNotificationTypes. ")
 				AND intJobPostUserId !='".$_SESSION['user_id']."' 
-				AND vchJobWorkType IN (" .$parentCategory. ")";	
+				AND vchJobWorkType IN (" .$parentFilter. ")";	
 	}
 	else if(!empty($childCategory))
 	{
@@ -111,7 +111,7 @@ if(isset($_REQUEST['submitsrch']) and !empty($_REQUEST['submitsrch']))
 				vchJobPostZipCode='".$Rows['vchZip_Code']."'
 				AND vchJobWorkType IN (" .$userNotificationTypes. ")
 				AND intJobPostUserId !='".$_SESSION['user_id']."' 
-				AND vchJobWorkSubType IN (" .$childCategory. ")";	
+				AND vchJobWorkSubType IN (" .$childFilter. ")";	
 	}
 	else
 	{
